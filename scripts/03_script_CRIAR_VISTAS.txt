@@ -5,7 +5,7 @@
 
 
 --=============
--- Ligação à BD
+-- Ligaï¿½ï¿½o ï¿½ BD
 --=============
 \set dataBase my_gis_gps
 ;
@@ -31,9 +31,12 @@
 -- VIEW V_LINHA_CONTORNO
 -- (a partir de GPS_PONTO)
 ----------------------------
---CREATE VIEW V_LINHA_CONTORNO( id_terreno, g_linha ) AS
---( SELECT 
-
+CREATE VIEW V_LINHA_CONTORNO( id_terreno, g_linha ) AS
+( SELECT ST_MakeLine( g_ponto ), id_terreno
+FROM ( SELECT g_ponto, id_ordem, id_terreno
+FROM gps_ponto
+ORDER BY id_terreno, id_ordem ) AS pontos_ordenados
+GROUP BY id_terreno );
 
 ----------------------------
 -- TAUX_LINHA_CONTORNO
