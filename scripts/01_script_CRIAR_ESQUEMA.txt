@@ -33,8 +33,8 @@ DROP TABLE IF EXISTS tipo_terreno;
 -- TIPO_TERRENO
 ---------------------------------
 CREATE TABLE tipo_terreno (
-    id INT PRIMARY KEY,
-    tipo VARCHAR(30) UNIQUE NOT NULL
+    id_tipo_terreno INT PRIMARY KEY,
+    nome VARCHAR(30) UNIQUE NOT NULL
 );
 
 
@@ -43,10 +43,9 @@ CREATE TABLE tipo_terreno (
 -- TERRENO
 ---------------------------------
 CREATE TABLE terreno (
-    id INT PRIMARY KEY,
-    tipo VARCHAR(30) ,
-    g_terreno GEOMETRY(POLYGON, 4326),
-    FOREIGN KEY (tipo) REFERENCES tipo_terreno(tipo)
+    id_terreno INT PRIMARY KEY,
+    id_tipo_terreno INT REFERENCES tipo_terreno(id_tipo_terreno),
+    g_terreno GEOMETRY(POLYGON, 4326)
     
 );
 
@@ -56,8 +55,13 @@ CREATE TABLE terreno (
 -- GPS_PONTO
 ---------------------------------
 CREATE TABLE gps_ponto (
-id1 INT PRIMARY KEY,
-id2 INT,
+id_ordem INT,
+id_terreno INT,
 ponto GEOMETRY(POINT, 4326)
 );
+
+ALTER TABLE gps_ponto
+ADD CONSTRAINT pk_gps_ponto PRIMARY KEY (id_ordem, id_terreno);
+ALTER TABLE gps_ponto
+ADD CONSTRAINT Fk_gps_ponto FOREIGN KEY (id_terreno) REFERENCES terreno (id_terreno);
 
