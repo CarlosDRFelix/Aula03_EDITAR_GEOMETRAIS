@@ -19,10 +19,10 @@
 
 
 --------------------------------
---DROP TABLE IF EXISTS T_PONTO_FRONTEIRA;
---DROP VIEW IF EXISTS V_POLIGONO;
---DROP VIEW IF EXISTS V_LINHA_EXTREMO_COINCIDENTE;
---DROP VIEW IF EXISTS V_LINHA_CONTORNO;
+DROP TABLE IF EXISTS T_PONTO_FRONTEIRA;
+DROP VIEW IF EXISTS V_POLIGONO;
+DROP VIEW IF EXISTS V_LINHA_EXTREMO_COINCIDENTE;
+DROP VIEW IF EXISTS V_LINHA_CONTORNO;
 --------------------------------
 
 
@@ -31,25 +31,28 @@
 -- VIEW V_LINHA_CONTORNO
 -- (a partir de GPS_PONTO)
 ----------------------------
-CREATE VIEW V_LINHA_CONTORNO( id_terreno, g_linha ) AS
-( SELECT ST_MakeLine( g_ponto ), id_terreno
-FROM ( SELECT g_ponto, id_ordem, id_terreno
+CREATE VIEW V_LINHA_CONTORNO( g_linha, id_terreno ) AS
+( SELECT ST_MakeLine(ponto), id_terreno
+FROM ( SELECT ponto, id_ordem, id_terreno
 FROM gps_ponto
-ORDER BY id_terreno, id_ordem ) AS pontos_ordenados
+ORDER BY id_ordem, id_terreno) AS pontos_ordenados
 GROUP BY id_terreno );
+
+SELECT g_linha FROM V_LINHA_CONTORNO;
 
 ----------------------------
 -- TAUX_LINHA_CONTORNO
 -- (apenas para usar apresentar no QGIS)
 ----------------------------
---DROP TABLE IF EXISTS TAUX_LINHA_CONTORNO;
---CREATE TABLE TAUX_LINHA_CONTORNO ( id SERIAL PRIMARY KEY );
---SELECT AddGeometryColumn
---('', 'taux_linha_contorno', 'g_linha', 0, 'LINESTRING', 2 );
+DROP TABLE IF EXISTS TAUX_LINHA_CONTORNO;
 
---INSERT INTO TAUX_LINHA_CONTORNO( g_linha )
---SELECT g_linha
---FROM V_LINHA_CONTORNO;
+CREATE TABLE TAUX_LINHA_CONTORNO ( id SERIAL PRIMARY KEY );
+SELECT AddGeometryColumn
+('', 'taux_linha_contorno', 'g_linha', 0, 'LINESTRING', 2 );
+
+INSERT INTO TAUX_LINHA_CONTORNO( g_linha )
+SELECT g_linha
+FROM V_LINHA_CONTORNO;
 
 
 
@@ -60,7 +63,13 @@ GROUP BY id_terreno );
 --CREATE VIEW V_LINHA_EXTREMO_COINCIDENTE( id_terreno, g_linha ) AS
 --SELECT 
 
+CREATE VIEW V_LINHA_EXTREMO_COINCIDENTE(g_linha, id_terreno) AS
+SELECT
+  ST_Multi(ST_Boundary(ST_Difference(ST_UnaryUnion(g_linha), ST_Boundary(ST_UnaryUnion(g_linha))))), id_terreno
+FROM
+  V_LINHA_CONTORNO;
 
+SELECT * FROM V_LINHA_EXTREMO_COINCIDENTE;
 
 ----------------------------
 -- VIEW V_POLIGONO
@@ -68,10 +77,16 @@ GROUP BY id_terreno );
 --CREATE VIEW V_POLIGONO( id_terreno, g_poligono ) AS
 --SELECT 
 
+CREATE VIEW V_POLIGONO AS
+SELECT
+  ST_BuildArea(ST_Union(g_linha)) AS g_poligono
+FROM
+  V_LINHA_EXTREMO_COINCIDENTE;
+  
+SELECT * FROM V_POLIGONO;
 
-
---SELECT id_terreno, ST_AsText( g_poligono ) AS g_poligono
---FROM V_POLIGONO;
+SELECT  ST_AsText( g_poligono ) AS g_poligono
+FROM V_POLIGONO;
 
 
 
@@ -97,3 +112,5 @@ GROUP BY id_terreno );
 
 --INSERT INTO T_PONTO_FRONTEIRA( g_multi_ponto )
 --SELECT
+
+
